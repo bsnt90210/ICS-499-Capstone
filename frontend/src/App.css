@@ -16,6 +16,51 @@ section {
   margin-top: 32px;
 }
 
+form {
+  margin-top: 16px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+input,
+button {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid #aeb9c8;
+  border-radius: 6px;
+  font: inherit;
+}
+
+input {
+  max-width: 220px;
+}
+
+button {
+  color: white;
+  background: #245a9b;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+form [role='alert'] {
+  margin-top: 8px;
+  color: #a01818;
+}
+
 .game-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
