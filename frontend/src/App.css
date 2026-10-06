@@ -1,11 +1,13 @@
 main {
   max-width: 960px;
   margin: 0 auto;
-  padding: 48px 24px;
+  padding: 40px 24px 64px;
 }
 
 h1 {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
+  font-size: 2.25rem;
+  line-height: 1.2;
 }
 
 p {
@@ -13,7 +15,21 @@ p {
 }
 
 section {
-  margin-top: 32px;
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid #d6dfeb;
+  border-radius: 10px;
+  background: white;
+}
+
+section h2 {
+  margin: 0 0 16px;
+  font-size: 1.4rem;
+}
+
+.recommendations-section {
+  border-color: #b8d0ef;
+  background: #eaf2fc;
 }
 
 form {
@@ -23,7 +39,7 @@ form {
 label {
   display: block;
   margin-bottom: 8px;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .form-row {
@@ -34,7 +50,7 @@ label {
 
 input,
 button {
-  min-height: 42px;
+  min-height: 44px;
   padding: 8px 12px;
   border: 1px solid #aeb9c8;
   border-radius: 6px;
@@ -42,13 +58,24 @@ button {
 }
 
 input {
-  max-width: 220px;
+  width: 220px;
+  max-width: 100%;
 }
 
 button {
   color: white;
   background: #245a9b;
   cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #194579;
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid #245a9b;
+  outline-offset: 2px;
 }
 
 button:disabled {
@@ -65,6 +92,7 @@ form [role='alert'] {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -78,4 +106,35 @@ form [role='alert'] {
 
 .game-card h3 {
   margin: 0 0 8px;
+}
+
+.game-card p + p {
+  margin-top: 4px;
+}
+
+@media (max-width: 600px) {
+  main {
+    padding: 24px 16px 40px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  section {
+    padding: 18px;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  input,
+  button {
+    width: 100%;
+  }
+
+  .game-list {
+    grid-template-columns: 1fr;
+  }
 }

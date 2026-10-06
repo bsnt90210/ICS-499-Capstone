@@ -1,6 +1,6 @@
 function GameLibrary({ games, loading, error }) {
   return (
-    <section aria-labelledby="library-heading">
+    <section className="library-section" aria-labelledby="library-heading">
       <h2 id="library-heading">Game library</h2>
       {loading && <p>Loading games...</p>}
       {error && <p role="alert">Could not load the game library. Please refresh the page.</p>}

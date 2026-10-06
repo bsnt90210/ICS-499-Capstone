@@ -1,6 +1,6 @@
 function RecommendationList({ games, searched, loading, error }) {
   return (
-    <section aria-labelledby="recommendations-heading">
+    <section className="recommendations-section" aria-labelledby="recommendations-heading">
       <h2 id="recommendations-heading">Recommendations</h2>
       {!searched && !loading && <p>Enter your available time to find games.</p>}
       {loading && <p>Finding games...</p>}

@@ -1,6 +1,6 @@
 function TimeInput({ minutes, onMinutesChange, onSubmit, loading, validationError }) {
   return (
-    <section aria-labelledby="time-heading">
+    <section className="time-section" aria-labelledby="time-heading">
       <h2 id="time-heading">Find games for your time</h2>
       <form onSubmit={onSubmit} noValidate>
         <label htmlFor="available-minutes">How many minutes do you have?</label>
