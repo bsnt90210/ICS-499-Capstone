@@ -1,0 +1,140 @@
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 2.25rem;
+  line-height: 1.2;
+}
+
+p {
+  margin: 0;
+}
+
+section {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid #d6dfeb;
+  border-radius: 10px;
+  background: white;
+}
+
+section h2 {
+  margin: 0 0 16px;
+  font-size: 1.4rem;
+}
+
+.recommendations-section {
+  border-color: #b8d0ef;
+  background: #eaf2fc;
+}
+
+form {
+  margin-top: 16px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+input,
+button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #aeb9c8;
+  border-radius: 6px;
+  font: inherit;
+}
+
+input {
+  width: 220px;
+  max-width: 100%;
+}
+
+button {
+  color: white;
+  background: #245a9b;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #194579;
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid #245a9b;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+form [role='alert'] {
+  margin-top: 8px;
+  color: #a01818;
+}
+
+.game-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-card {
+  padding: 16px;
+  border: 1px solid #d5dbe5;
+  border-radius: 8px;
+  background: white;
+}
+
+.game-card h3 {
+  margin: 0 0 8px;
+}
+
+.game-card p + p {
+  margin-top: 4px;
+}
+
+@media (max-width: 600px) {
+  main {
+    padding: 24px 16px 40px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  section {
+    padding: 18px;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  input,
+  button {
+    width: 100%;
+  }
+
+  .game-list {
+    grid-template-columns: 1fr;
+  }
+}
