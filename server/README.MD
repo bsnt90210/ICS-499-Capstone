@@ -3,7 +3,7 @@ npm install express csv-parse
 # and to run:
 npm run dev
 
-# MARS frontend
+# MARS backend
 
 # Run locally
 
