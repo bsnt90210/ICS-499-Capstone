@@ -1,6 +1,10 @@
 # MARS Game Finder — Iteration 2
 
-Enter available minutes to see games that fit that time. The React page calls an Express API backed by SQLite. `tester.csv` is a five-game **sample dataset** for the Iteration 2 demo; replace it with the team's approved game data when ready.
+[![CI](https://github.com/bsnt90210/ICS-499-Capstone/actions/workflows/hello.yml/badge.svg?branch=main)](https://github.com/bsnt90210/ICS-499-Capstone/actions/workflows/hello.yml)
+
+[Open the live app](https://mars-game-finder.onrender.com/)
+
+Enter available minutes to see games that fit that time. The React page calls an Express API backed by SQLite. `tester.csv` contains eight sample games for the Iteration 2 demo. Recommendations include games whose `estimatedMinutes` is less than or equal to the number entered. Genre filtering, Steam import, and AI explanations are later work.
 
 ## Run locally
 
@@ -27,8 +31,8 @@ cd frontend && npm run lint && npm run build
 cd ../server && npm test
 ```
 
-`GET /api/games` returns all games. `GET /api/recommendations?availableMinutes=30` returns games at or below 30 minutes. `GET /api/health` is for deployment checks. The server reloads `tester.csv` into SQLite on startup, so removed CSV rows do not linger in the app.
+`GET /api/games` returns all eight games. `GET /api/recommendations?availableMinutes=30` returns Rocket League (15), Robots (25), and Hades (30). `GET /api/health` is for deployment checks. The server reloads `tester.csv` into SQLite on startup, so removed CSV rows do not linger in the app.
 
 ## Render
 
-`render.yaml` defines one Node web service that builds the frontend and runs the backend. Connect this GitHub repository as a Render Blueprint, select the branch with these changes, and check the resulting `/api/health` URL and the page. The service uses a local SQLite file rebuilt from `tester.csv` at startup; edits to the database itself are not persistent across deploys. A `render.yaml` file alone does not create a live Render deployment.
+`render.yaml` defines the live Node web service at [mars-game-finder.onrender.com](https://mars-game-finder.onrender.com/). It builds the frontend and runs the Express backend at the same URL. The service uses a local SQLite file rebuilt from `tester.csv` at startup; database-only edits do not persist across deploys. GitHub Actions runs build, lint, and backend tests on pushes and pull requests; Render deployment is configured separately.
