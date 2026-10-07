@@ -10,7 +10,8 @@ npm run dev
 
 # From the repository root:
 
-cd server
+cd server 
+#
 npm run dev
 
 Open the local URL printed by Vite.
