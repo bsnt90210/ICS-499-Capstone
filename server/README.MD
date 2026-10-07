@@ -1,12 +1,14 @@
 # needs to be installed: 
 npm install express csv-parse
 # and to run:
-npm run devMARS frontend
+npm run dev
 
-Simple React application created with Vite.
-Run locally
+# MARS frontend
 
-From the repository root:
+# Simple React application created with Vite.
+# Run locally
+
+# From the repository root:
 
 cd server
 npm run dev
