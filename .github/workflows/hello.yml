@@ -18,7 +18,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -31,10 +31,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      # No `npm test` step yet — the frontend has no test command.
-
   backend:
-    name: Backend install & syntax check
+    name: Backend install & test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -46,7 +44,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: server/package-lock.json
 
@@ -56,7 +54,5 @@ jobs:
       - name: Syntax check
         run: node --check src/server.js
 
-      # server/package.json has no `lint` script yet, and its `test`
-      # script is still the default placeholder (exits with an error),
-      # so neither is safe to run in CI yet. Swap this syntax check for
-      # `npm run lint` / `npm test` once those are real.
+      - name: Test API and CSV import
+        run: npm test
