@@ -5,7 +5,6 @@ npm run dev
 
 # MARS frontend
 
-# Simple React application created with Vite.
 # Run locally
 
 # From the repository root:
