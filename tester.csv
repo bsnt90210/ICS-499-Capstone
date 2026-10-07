@@ -1,6 +1,9 @@
 id,title,genre,estimatedMinutes
-1,Stardew Valley,Simulation,15
-2,Hades,Roguelike,30
-3,Rocket League,Sports,45
-4,Minecraft,Sandbox,60
-5,Civilization VI,Strategy,90
+1,Hades,Roguelike,30
+2,Stardew Valley,Simulation,45
+3,Civilization VI,Strategy,90
+4,Portal 2,Puzzle,40
+5,Rocket League,Sports,15
+6,Half-Life,Action,120
+7,Assassin's Cread Shadows, Action, 180
+8,Robots, RPG, 25
