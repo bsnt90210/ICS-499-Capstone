@@ -7,9 +7,9 @@ function TimeInput({ minutes, onMinutesChange, onSubmit, loading, validationErro
         <div className="form-row">
           <input
             id="available-minutes"
-            type="number"
-            min="1"
-            step="1"
+            type="text"
+            inputMode="numeric"
+            pattern="[1-9][0-9]*"
             value={minutes}
             onChange={(event) => onMinutesChange(event.target.value)}
             aria-describedby={validationError ? 'time-error' : undefined}
