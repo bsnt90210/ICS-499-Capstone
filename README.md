@@ -14,9 +14,9 @@ The frontend now has a genre dropdown. Picking a genre filters the library, and 
 
 The minutes field accepts plain positive whole numbers. Blank input, decimals, negative numbers, and values such as `3e1` show a message without sending a search. Results show which time and genre you searched for and clear when either input changes. If genres cannot load, time searches still work across all genres.
 
-These frontend changes are local work and have not been deployed yet. The backend in this checkout still uses the eight-game Iteration 2 CSV and does not have the genre endpoint or genre filtering. With that backend, the dropdown shows “Genres unavailable,” and the new play-history fields show “Unavailable.” Andrey’s backend update will add the 103-game dataset, genre support, and the extra card data. We still need to check the frontend against that update after it merges.
+The integrated Iteration 3 code uses 103 games and five SQLite tables. The frontend and backend share the response contract below. The library and recommendations both include genre names, play modes, and sample play history.
 
-The dataset is sample data. For Iteration 3, genres and play modes will come from Steam store data, while session lengths, playtimes, and play dates are hand-entered examples. The app does not connect to a Steam account. Steam import, game images, Rediscover, and AI explanations are future work.
+The dataset is sample data. Genres and play modes come from Steam store data, while session lengths, playtimes, and play dates are hand-entered examples. The app does not connect to a Steam account. Steam import, game images, Rediscover, and AI explanations are future work.
 
 ## Run locally
 
@@ -39,11 +39,11 @@ Open the local URL printed by Vite. It forwards `/api` requests to Express on po
 ## Check the app
 
 ```sh
-cd frontend && npm run lint && npm run build
-cd ../server && npm test
+cd frontend && npm run lint && npm run test:coverage && npm run build
+cd ../server && npm run test:coverage
 ```
 
-The frontend also has 21 Vitest tests covering input validation, genre requests, card fields, empty and error messages, and clearing old results. They passed locally with simulated API responses. Muniib’s tooling update will add the permanent test dependencies, scripts, coverage reports, and CI steps. Until that update merges, `npm ci` alone will not install the frontend test tools, and there is no frontend `npm test` script in the checked-in package file.
+The frontend has 21 Vitest tests covering input validation, genre requests, card fields, empty and error messages, and clearing old results. Run `npm test` or `npm run test:coverage` from `frontend/`. Run `npm run test:coverage` from `server/` for the API and CSV tests. Both packages have locked test dependencies and CI coverage gates. Frontend tests use simulated API responses; backend tests start real temporary servers.
 
 The backend tests use a temporary CSV and database. The server reloads `tester.csv` into SQLite on startup, so games removed from the CSV are removed from the database too.
 
@@ -55,7 +55,7 @@ The current backend has these routes:
 - `GET /api/games` returns the sample library.
 - `GET /api/recommendations?availableMinutes=30` returns games with estimated sessions of 30 minutes or less.
 
-The Iteration 3 frontend also expects `GET /api/genres` and an optional `genre` parameter on both game routes. For example, `/api/recommendations?availableMinutes=60&genre=Strategy` should return Strategy games that fit within 60 minutes. Those backend changes are still pending in this checkout.
+The API also provides `GET /api/genres` and an optional `genre` parameter on both game routes. For example, `/api/recommendations?availableMinutes=60&genre=Strategy` should return Strategy games that fit within 60 minutes. The game routes return arrays, and `/api/genres` returns an array of names. Each game has `id`, `title`, `genres`, `categories`, `estimatedMinutes`, `playtimeMinutes`, and `lastPlayed` (YYYY-MM-DD or null).
 
 ## Render
 
@@ -63,6 +63,6 @@ The Iteration 3 frontend also expects `GET /api/genres` and an optional `genre` 
 
 SQLite is rebuilt from the bundled CSV when the server starts. Changes made only in the database are not saved across rebuilds.
 
-The checked-in GitHub Actions workflow runs frontend lint and build, plus backend syntax checks and tests, on pushes and pull requests. Coverage checks and dependency scanning are still waiting on the tooling update.
+The checked-in GitHub Actions workflow runs frontend lint and build, plus backend syntax checks and tests, on pushes and pull requests. Both jobs also run coverage gates, upload HTML coverage reports, and run `npm audit --audit-level=high`. The backend coverage tooling has four moderate dependency findings; the agreed gate blocks high-severity findings.
 
 On October 31, we set Render’s auto-deploy option to “After CI Checks Pass” and protected `main` on GitHub. Changes now go through a pull request, with the branch up to date and both “Frontend lint & build” and “Backend install & test” passing before merge. The rules also apply to admins.

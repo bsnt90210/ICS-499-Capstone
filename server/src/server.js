@@ -1,259 +1,155 @@
+import express from 'express';
+import { DatabaseSync } from 'node:sqlite';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parse } from 'csv-parse/sync';
 
-const fs = require('fs');
-const path = require('path');
-const express = require('express');
-const Database = require('better-sqlite3');
-const { parse } = require('csv-parse/sync');
+const serverDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const projectDirectory = resolve(serverDirectory, '..');
+const csvPath = resolve(process.env.GAMES_CSV_PATH ?? join(projectDirectory, 'tester.csv'));
+const databasePath = resolve(process.env.DATABASE_PATH ?? join(serverDirectory, 'data', 'games.sqlite'));
+const port = Number(process.env.PORT ?? 3001);
+mkdirSync(dirname(databasePath), { recursive: true });
+const db = new DatabaseSync(databasePath);
+db.exec('PRAGMA foreign_keys = ON');
 
-const PORT = Number(process.env.PORT) || 3001;
-const CSV_PATH = path.resolve(process.env.CSV_PATH || path.join(__dirname, 'tester.csv'));
-const DB_PATH = path.resolve(process.env.DB_PATH || path.join(__dirname, 'games.db'));
-
-
-const db = new Database(DB_PATH);
-db.pragma('foreign_keys = ON');
-
-const SCHEMA = `
-DROP TABLE IF EXISTS game_categories;
-DROP TABLE IF EXISTS game_genres;
-DROP TABLE IF EXISTS categories;
-DROP TABLE IF EXISTS genres;
-DROP TABLE IF EXISTS games;
-
-CREATE TABLE games (
-  id                INTEGER PRIMARY KEY,
-  title             TEXT    NOT NULL,
-  estimated_minutes INTEGER NOT NULL CHECK (estimated_minutes > 0),
-  playtime_minutes  INTEGER NOT NULL DEFAULT 0 CHECK (playtime_minutes >= 0),
-  last_played       DATE
-);
-
-CREATE TABLE genres (
-  id   INTEGER PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE COLLATE NOCASE
-);
-
-CREATE TABLE game_genres (
-  game_id  INTEGER NOT NULL REFERENCES games(id),
-  genre_id INTEGER NOT NULL REFERENCES genres(id),
-  PRIMARY KEY (game_id, genre_id)
-);
-
-CREATE TABLE categories (
-  id   INTEGER PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE COLLATE NOCASE
-);
-
-CREATE TABLE game_categories (
-  game_id     INTEGER NOT NULL REFERENCES games(id),
-  category_id INTEGER NOT NULL REFERENCES categories(id),
-  PRIMARY KEY (game_id, category_id)
-);
-`;
-
-const REQUIRED_COLUMNS = [
-  'id',
-  'title',
-  'genre',
-  'estimatedMinutes',
-  'playedTime',
-  'lastPlayedDate',
-  'categories',
-];
-
-function parseJsonArray(value) {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function importCsv() {
-  if (!fs.existsSync(CSV_PATH)) throw new Error(`CSV file not found: ${CSV_PATH}`);
-
-  const rows = parse(fs.readFileSync(CSV_PATH), {
-    columns: true,
-    bom: true,
-    skip_empty_lines: true,
+function loadGamesFromCsv() {
+  const records = parse(readFileSync(csvPath, 'utf8'), {
+    bom: true, columns: true, skip_empty_lines: true, trim: true,
   });
-  if (rows.length === 0) throw new Error('CSV file has no data rows.');
-
-  const missing = REQUIRED_COLUMNS.filter((c) => !(c in rows[0]));
-  if (missing.length) throw new Error(`CSV is missing columns: ${missing.join(', ')}`);
-
-  const run = db.transaction(() => {
-    
-    db.exec(SCHEMA);
-
-    const insertGame = db.prepare(
-      `INSERT INTO games (id, title, estimated_minutes, playtime_minutes, last_played)
-       VALUES (?, ?, ?, ?, ?)`
-    );
-    const insertGenre = db.prepare('INSERT OR IGNORE INTO genres (name) VALUES (?)');
-    const findGenre = db.prepare('SELECT id FROM genres WHERE name = ?');
-    const insertCategory = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
-    const findCategory = db.prepare('SELECT id FROM categories WHERE name = ?');
-    const linkGenre = db.prepare('INSERT OR IGNORE INTO game_genres (game_id, genre_id) VALUES (?, ?)');
-    const linkCategory = db.prepare(
-      'INSERT OR IGNORE INTO game_categories (game_id, category_id) VALUES (?, ?)'
-    );
-
-    for (const row of rows) {
-      const id = parseInt(row.id, 10);
-
-     
-      insertGame.run(
-        id,
-        row.title,
-        Math.round(Number(row.estimatedMinutes)),
-        parseInt(row.playedTime, 10) || 0,
-        row.lastPlayedDate || null
-      );
-
-      
-      const genreName = (row.genre || '').trim();
-      if (genreName) {
-        insertGenre.run(genreName);
-        linkGenre.run(id, findGenre.get(genreName).id);
+  const required = ['id', 'title', 'estimatedMinutes', 'playtimeMinutes', 'lastPlayed', 'genres', 'categories'];
+  if (!records.length) throw new Error('CSV must contain at least one game');
+  for (const column of required) {
+    if (!(column in records[0])) throw new Error(`Missing required CSV column: ${column}`);
+  }
+  const ids = new Set();
+  const games = records.map((row, index) => {
+    try {
+      const integer = (value, minimum) => {
+        if (!/^\d+$/.test(value)) throw new Error('Expected whole-number data');
+        const number = Number(value);
+        if (!Number.isSafeInteger(number) || number < minimum) throw new Error('Invalid numeric value');
+        return number;
+      };
+      const names = (value) => {
+        const entries = JSON.parse(value);
+        if (!Array.isArray(entries)) throw new Error('Metadata must be an array');
+        return entries.map((entry) => {
+          if (typeof entry?.description !== 'string' || !entry.description.trim()) {
+            throw new Error('Metadata needs a description');
+          }
+          return entry.description.trim();
+        });
+      };
+      const game = {
+        id: integer(row.id, 1), title: row.title,
+        estimatedMinutes: integer(row.estimatedMinutes, 1),
+        playtimeMinutes: integer(row.playtimeMinutes || '0', 0),
+        lastPlayed: row.lastPlayed || null,
+        genres: names(row.genres), categories: names(row.categories),
+      };
+      if (!game.title || ids.has(game.id)) throw new Error('Blank title or duplicate id');
+      if (game.lastPlayed && (!/^\d{4}-\d{2}-\d{2}$/.test(game.lastPlayed) ||
+          !Number.isFinite(Date.parse(game.lastPlayed)) ||
+          new Date(game.lastPlayed).toISOString().slice(0, 10) !== game.lastPlayed)) {
+        throw new Error('Invalid play date');
       }
-
-     
-      for (const c of parseJsonArray(row.categories)) {
-        const categoryName = (c.description || '').trim();
-        if (!categoryName) continue;
-        insertCategory.run(categoryName);
-        linkCategory.run(id, findCategory.get(categoryName).id);
-      }
+      if (!game.genres.length) game.genres = ['Uncategorized'];
+      ids.add(game.id);
+      return game;
+    } catch (error) {
+      throw new Error(`Invalid game on CSV line ${index + 2}: ${error.message}`);
     }
   });
-  run();
-
-  const count = (table) => db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n;
-  const summary = {
-    games: count('games'),
-    genres: count('genres'),
-    game_genres: count('game_genres'),
-    categories: count('categories'),
-    game_categories: count('game_categories'),
-  };
-  console.log('Import complete:', summary);
-  return summary;
+  db.exec('BEGIN');
+  try {
+    db.exec(readFileSync(join(serverDirectory, 'sql', 'schema.sql'), 'utf8'));
+    const insertGame = db.prepare('INSERT INTO games VALUES (?, ?, ?, ?, ?)');
+    const insertGenre = db.prepare('INSERT OR IGNORE INTO genres (name) VALUES (?)');
+    const findGenre = db.prepare('SELECT id FROM genres WHERE name = ?');
+    const linkGenre = db.prepare('INSERT OR IGNORE INTO game_genres VALUES (?, ?)');
+    const insertCategory = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
+    const findCategory = db.prepare('SELECT id FROM categories WHERE name = ?');
+    const linkCategory = db.prepare('INSERT OR IGNORE INTO game_categories VALUES (?, ?)');
+    for (const game of games) {
+      insertGame.run(game.id, game.title, game.estimatedMinutes, game.playtimeMinutes, game.lastPlayed);
+      for (const name of game.genres) {
+        insertGenre.run(name);
+        linkGenre.run(game.id, findGenre.get(name).id);
+      }
+      for (const name of game.categories) {
+        insertCategory.run(name);
+        linkCategory.run(game.id, findCategory.get(name).id);
+      }
+    }
+    db.exec('COMMIT');
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+  console.log(`Loaded ${games.length} games from ${csvPath}`);
 }
 
-importCsv();
+loadGamesFromCsv();
 
+const fields = 'g.id, g.title, g.estimated_minutes AS estimatedMinutes, g.playtime_minutes AS playtimeMinutes, g.last_played AS lastPlayed';
+const genreFilter = `(? IS NULL OR EXISTS (
+  SELECT 1 FROM game_genres gg JOIN genres ge ON ge.id = gg.genre_id
+  WHERE gg.game_id = g.id AND ge.name = ?))`;
+const listGames = db.prepare(`SELECT ${fields} FROM games g WHERE ${genreFilter} ORDER BY g.id`);
+const listGenres = db.prepare('SELECT name FROM genres ORDER BY name');
+const recommendGames = db.prepare(`SELECT ${fields} FROM games g
+  WHERE g.estimated_minutes <= ? AND ${genreFilter} ORDER BY g.estimated_minutes, g.id`);
+const listGameGenres = db.prepare(`SELECT ge.name FROM game_genres gg JOIN genres ge ON ge.id = gg.genre_id
+  WHERE gg.game_id = ? ORDER BY ge.name`);
+const listGameCategories = db.prepare(`SELECT c.name FROM game_categories gc JOIN categories c ON c.id = gc.category_id
+  WHERE gc.game_id = ? ORDER BY c.name`);
+
+function addGenresAndCategories(games) {
+  return games.map((game) => ({
+    ...game,
+    genres: listGameGenres.all(game.id).map((row) => row.name),
+    categories: listGameCategories.all(game.id).map((row) => row.name),
+  }));
+}
+
+function parseAvailableMinutes(value) {
+  if (typeof value !== 'string' || !/^[1-9][0-9]*$/.test(value) || !Number.isSafeInteger(Number(value))) {
+    throw new Error('availableMinutes must be a positive whole number');
+  }
+  return Number(value);
+}
+
+function parseGenre(value) {
+  if (value === undefined) return null;
+  if (typeof value !== 'string') throw new Error('genre must be a single value');
+  return value.trim() || null;
+}
 
 const app = express();
-app.use(express.json());
-
-
-const GAME_SELECT = `
-  SELECT g.*,
-    (SELECT json_group_array(ge.name) FROM game_genres gg
-       JOIN genres ge ON ge.id = gg.genre_id WHERE gg.game_id = g.id) AS genres,
-    (SELECT json_group_array(c.name) FROM game_categories gc
-       JOIN categories c ON c.id = gc.category_id WHERE gc.game_id = g.id) AS categories
-  FROM games g`;
-
-const shapeGame = (row) => ({
-  ...row,
-  genres: JSON.parse(row.genres),
-  categories: JSON.parse(row.categories),
-});
-
-
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/games', (req, res) => {
-  const where = [];
-  const params = [];
-
-  if (req.query.genre) {
-    where.push(`EXISTS (SELECT 1 FROM game_genres gg JOIN genres ge ON ge.id = gg.genre_id
-                        WHERE gg.game_id = g.id AND ge.name = ?)`);
-    params.push(req.query.genre);
-  }
-  if (req.query.category) {
-    where.push(`EXISTS (SELECT 1 FROM game_categories gc JOIN categories c ON c.id = gc.category_id
-                        WHERE gc.game_id = g.id AND c.name = ?)`);
-    params.push(req.query.category);
-  }
-  if (req.query.q) {
-    where.push('g.title LIKE ?');
-    params.push(`%${req.query.q}%`);
-  }
-
-  const whereSql = where.length ? ` WHERE ${where.join(' AND ')}` : '';
-  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200);
-  const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
-
-  const total = db.prepare(`SELECT COUNT(*) AS n FROM games g${whereSql}`).get(...params).n;
-  const rows = db
-    .prepare(`${GAME_SELECT}${whereSql} ORDER BY g.id LIMIT ? OFFSET ?`)
-    .all(...params, limit, offset);
-
-  res.json({ total, limit, offset, data: rows.map(shapeGame) });
+  let genre;
+  try { genre = parseGenre(req.query.genre); }
+  catch (error) { return res.status(400).json({ error: error.message }); }
+  return res.json(addGenresAndCategories(listGames.all(genre, genre)));
 });
-
-app.get('/api/games/:id', (req, res) => {
-  const row = db.prepare(`${GAME_SELECT} WHERE g.id = ?`).get(req.params.id);
-  if (!row) return res.status(404).json({ error: 'Game not found' });
-  res.json(shapeGame(row));
-});
-
-app.get('/api/genres', (_req, res) => {
-  res.json(
-    db
-      .prepare(
-        `SELECT ge.id, ge.name, COUNT(gg.game_id) AS game_count
-         FROM genres ge LEFT JOIN game_genres gg ON gg.genre_id = ge.id
-         GROUP BY ge.id ORDER BY ge.name`
-      )
-      .all()
-  );
-});
-
-app.get('/api/categories', (_req, res) => {
-  res.json(
-    db
-      .prepare(
-        `SELECT c.id, c.name, COUNT(gc.game_id) AS game_count
-         FROM categories c LEFT JOIN game_categories gc ON gc.category_id = c.id
-         GROUP BY c.id ORDER BY c.name`
-      )
-      .all()
-  );
-});
-
-
-const recommendGames = db.prepare(`
-  SELECT g.id, g.title, g.estimated_minutes AS estimatedMinutes,
-         g.playtime_minutes AS playtimeMinutes, g.last_played AS lastPlayed
-  FROM games g
-  WHERE g.estimated_minutes <= ?
-    AND (? IS NULL OR EXISTS (
-          SELECT 1 FROM game_genres gg JOIN genres ge ON ge.id = gg.genre_id
-          WHERE gg.game_id = g.id AND ge.name = ?))
-  ORDER BY g.estimated_minutes, g.id
-`);
-
-
+app.get('/api/genres', (_req, res) => res.json(listGenres.all().map((row) => row.name)));
 app.get('/api/recommendations', (req, res) => {
-  const availableMinutes = Number(req.query.availableMinutes);
-  if (!Number.isInteger(availableMinutes) || availableMinutes <= 0) {
-    return res
-      .status(400)
-      .json({ error: 'availableMinutes is required and must be a positive whole number' });
-  }
-
-
-  const genre = (req.query.genre || '').trim() || null;
-
-  res.json(recommendGames.all(availableMinutes, genre, genre));
+  let minutes, genre;
+  try {
+    minutes = parseAvailableMinutes(req.query.availableMinutes);
+    genre = parseGenre(req.query.genre);
+  } catch (error) { return res.status(400).json({ error: error.message }); }
+  return res.json(addGenresAndCategories(recommendGames.all(minutes, genre, genre)));
 });
-
-app.listen(PORT, () => {
-  console.log(`API running on http://localhost:${PORT}`);
-  console.log(`Database: ${DB_PATH}`);
+app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
+const distDirectory = join(projectDirectory, 'frontend', 'dist');
+app.use(express.static(distDirectory));
+app.use((req, res, next) => {
+  if (req.method === 'GET') return res.sendFile(join(distDirectory, 'index.html'));
+  return next();
 });
+app.listen(port, '0.0.0.0', () => console.log(`Listening on port ${port}`));
+process.on('SIGTERM', () => process.exit(0));
