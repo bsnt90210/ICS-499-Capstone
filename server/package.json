@@ -4,10 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --test",
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
-  },
+  "test": "node --test",
+
+"test:coverage": "c8 --all --include='src/**' --reporter=text --reporter=html --check-coverage --lines=85 --branches=55 --functions=95 --statements=85 npm test",
+  "dev": "node --watch src/server.js",
+  "start": "node src/server.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -15,5 +17,8 @@
   "dependencies": {
     "csv-parse": "^7.0.3",
     "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "c8": "^12.0.0"
   }
 }
