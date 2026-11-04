@@ -47,6 +47,19 @@ db.exec(`
     PRIMARY KEY (game_id, genre_id)
   ); 
 `);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE COLLATE NOCASE
+  ); 
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS game_categories (
+    game_id INTEGER NOT NULL REFERENCES games(id),
+    category_id INTEGER NOT NULL REFERENCES categories(id),
+    PRIMARY KEY (game_id, category_id)
+  );
+`);
 
 // Parse CSV rows as objects using the header row as column names.
 const csvText = readFileSync(csvPath, "utf8");
