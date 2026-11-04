@@ -1,3 +1,4 @@
+
 import express from "express";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, readFileSync } from "node:fs";
@@ -92,3 +93,6 @@ app.listen(port, "0.0.0.0", () => {
   console.log(`Loaded ${games.length} games from ${csvPath}`);
   console.log(`Listening on port ${port}`);
 });
+
+// Allow the server to exit cleanly when tests send SIGTERM.
+process.on("SIGTERM", () => process.exit(0));

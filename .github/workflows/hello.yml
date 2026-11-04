@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -31,6 +32,20 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+      - name: Upload frontend coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          if-no-files-found: warn
+
   backend:
     name: Backend install & test
     runs-on: ubuntu-latest
@@ -54,5 +69,16 @@ jobs:
       - name: Syntax check
         run: node --check src/server.js
 
-      - name: Test API and CSV import
-        run: npm test
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+      - name: Upload backend coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: server/coverage/
+          if-no-files-found: warn
