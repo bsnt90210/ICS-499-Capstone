@@ -6,12 +6,13 @@ export default defineConfig({
     environment: 'jsdom',
     coverage: {
       provider: 'v8',
+      include: ['src/**/*.{js,jsx}'],
       reporter: ['text', 'html'],
       thresholds: {
-        lines: 40,
-        branches: 43,
-        functions: 45,
-        statements: 41,
+        lines: 32,
+        branches: 40,
+        functions: 38,
+        statements: 33,
       },
     },
   },
