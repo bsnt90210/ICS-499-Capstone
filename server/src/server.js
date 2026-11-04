@@ -31,7 +31,7 @@ db.exec(`
     genre TEXT NOT NULL,
     estimated_minutes INTEGER NOT NULL CHECK (estimated_minutes > 0),
     playtime_minutes INTEGER NOT NULL DEFAULT 0 CHECK (playtime_minutes >= 0),
-    last_played TEXT
+    last_played DATE
   ); 
 `);
 db.exec(`
