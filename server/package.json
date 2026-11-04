@@ -1,24 +1,19 @@
 {
-  "name": "server",
+  "name": "tester-games-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Express backend that imports tester.csv into SQLite",
+  "main": "server.js",
   "scripts": {
-  "test": "node --test",
-
-"test:coverage": "c8 --all --include='src/**' --reporter=text --reporter=html --check-coverage --lines=85 --branches=55 --functions=95 --statements=85 npm test",
-  "dev": "node --watch src/server.js",
-  "start": "node src/server.js"
-},
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "dependencies": {
-    "csv-parse": "^7.0.3",
-    "express": "^5.2.1"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
   },
-  "devDependencies": {
-    "c8": "^12.0.0"
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "csv-parse": "^5.6.0",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
