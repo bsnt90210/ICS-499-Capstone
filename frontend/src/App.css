@@ -49,6 +49,7 @@ label {
 }
 
 input,
+select,
 button {
   min-height: 44px;
   padding: 8px 12px;
@@ -57,7 +58,8 @@ button {
   font: inherit;
 }
 
-input {
+input,
+select {
   width: 220px;
   max-width: 100%;
 }
@@ -73,6 +75,7 @@ button:hover:not(:disabled) {
 }
 
 input:focus-visible,
+select:focus-visible,
 button:focus-visible {
   outline: 2px solid #245a9b;
   outline-offset: 2px;
@@ -112,6 +115,16 @@ form [role='alert'] {
   margin-top: 4px;
 }
 
+.game-categories {
+  font-size: 0.875rem;
+  color: #526174;
+}
+
+.search-label {
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
 @media (max-width: 600px) {
   main {
     padding: 24px 16px 40px;
@@ -130,6 +143,7 @@ form [role='alert'] {
   }
 
   input,
+  select,
   button {
     width: 100%;
   }

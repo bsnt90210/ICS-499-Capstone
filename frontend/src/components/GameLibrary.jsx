@@ -1,3 +1,5 @@
+import GameCard from './GameCard.jsx'
+
 function GameLibrary({ games, loading, error }) {
   return (
     <section className="library-section" aria-labelledby="library-heading">
@@ -8,11 +10,7 @@ function GameLibrary({ games, loading, error }) {
       {!loading && !error && games.length > 0 && (
         <ul className="game-list">
           {games.map((game) => (
-            <li className="game-card" key={game.id}>
-              <h3>{game.title}</h3>
-              <p>{game.genre}</p>
-              <p>Estimated session: {game.estimatedMinutes} minutes</p>
-            </li>
+            <GameCard key={game.id} game={game} />
           ))}
         </ul>
       )}
